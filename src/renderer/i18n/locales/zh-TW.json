@@ -48,7 +48,12 @@
     "geminiBaseUrl": "Gemini API Base URL",
     "tempDir": "暫存資料夾",
     "language": "語言",
-    "geminiSettings": "gemini 設定"
+    "geminiSettings": "gemini 設定",
+    "addApiKey": "新增 API 金鑰",
+    "setActive": "設為作用中",
+    "active": "作用中",
+    "rateLimited": "速率限制，重設於",
+    "invalid": "無效"
   },
   "messages": {
     "conversationInProgress": "目前正在進行對話...",

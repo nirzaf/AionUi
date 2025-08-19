@@ -166,3 +166,9 @@ ipcBridge.geminiConversation.getWorkspace.provider(async ({ workspace }) => {
       return res;
     });
 });
+
+import { keyManager } from "@/agent/gemini/keyManager";
+
+ipcBridge.geminiApis.getKeyStatuses.provider(async () => {
+  return keyManager.getAllKeys();
+});

@@ -48,7 +48,12 @@
     "geminiBaseUrl": "Gemini API Base URL",
     "tempDir": "临时目录",
     "language": "语言",
-    "geminiSettings": "gemini 设置"
+    "geminiSettings": "gemini 设置",
+    "addApiKey": "添加 API Key",
+    "setActive": "设为当前",
+    "active": "当前",
+    "rateLimited": "请求受限, 重置于",
+    "invalid": "无效"
   },
   "messages": {
     "conversationInProgress": "当前正在进行对话中...",

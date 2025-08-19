@@ -48,7 +48,12 @@
     "geminiBaseUrl": "Gemini API ベース URL",
     "tempDir": "一時ディレクトリ",
     "language": "言語",
-    "geminiSettings": "Geminiの設定"
+    "geminiSettings": "Geminiの設定",
+    "addApiKey": "APIキーを追加",
+    "setActive": "アクティブに設定",
+    "active": "アクティブ",
+    "rateLimited": "レート制限中、リセット:",
+    "invalid": "無効"
   },
   "messages": {
     "conversationInProgress": "現在、会話中です...",

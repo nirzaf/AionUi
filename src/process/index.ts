@@ -7,9 +7,12 @@
 import initStorage from "./initStorage";
 import "./initBridge";
 import { app } from "electron";
+import { keyManager } from "@/agent/gemini/keyManager";
 
 setTimeout(initStorage);
 
 app.whenReady().then(() => {
-  initStorage();
+  initStorage().then(() => {
+    keyManager.init();
+  });
 });

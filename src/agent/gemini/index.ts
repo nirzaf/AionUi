@@ -24,6 +24,7 @@ import { handleAtCommand } from "./cli/atCommandProcessor";
 import { execSync } from "child_process";
 import { mapToDisplay } from "./cli/useReactToolScheduler";
 import { uuid } from "@/common/utils";
+import { keyManager } from "./keyManager";
 
 function mergeMcpServers(
   settings: ReturnType<typeof loadSettings>["merged"],
@@ -46,10 +47,6 @@ function mergeMcpServers(
   return mcpServers;
 }
 
-const realValue = (value: string) => {
-  return value && value !== "undefined";
-};
-
 export class GeminiAgent {
   config: Config | null = null;
   private workspace: string | null = null;
@@ -65,11 +62,14 @@ export class GeminiAgent {
     msg_id: string;
   }) => void;
   bootstrap: Promise<void>;
+
   constructor(options: {
     workspace: string;
     proxy?: string;
     authType?: AuthType;
     GEMINI_API_KEY?: string;
+    GEMINI_API_KEYS?: string[];
+    activeKeyIndex?: number;
     GOOGLE_API_KEY?: string;
     GOOGLE_GEMINI_BASE_URL?: string;
     GOOGLE_CLOUD_PROJECT?: string;
@@ -92,11 +92,13 @@ export class GeminiAgent {
     };
 
     if (this.authType === AuthType.USE_GEMINI) {
-      fallbackValue(
-        "GEMINI_API_KEY",
-        options?.GEMINI_API_KEY,
-        env.GEMINI_API_KEY
-      );
+      const activeKey = keyManager.getActiveKey();
+      if (activeKey) {
+        process.env.GEMINI_API_KEY = activeKey.key;
+      } else if (options.GEMINI_API_KEY) {
+        // for backward compatibility
+        process.env.GEMINI_API_KEY = options.GEMINI_API_KEY;
+      }
       fallbackValue(
         "GOOGLE_GEMINI_BASE_URL",
         options?.GOOGLE_GEMINI_BASE_URL,
@@ -261,39 +263,79 @@ export class GeminiAgent {
     msg_id: string,
     abortController: AbortController
   ) {
-    try {
-      const stream = await this.geminiClient.sendMessageStream(
-        query,
-        abortController.signal
-      );
-      this.onStreamEvent({
-        type: "start",
-        data: "",
-        msg_id,
-      });
-      this.handleMessage(stream, msg_id, abortController)
-        .catch((e: any) => {
-          this.onStreamEvent({
-            type: "error",
-            data: e?.message || JSON.stringify(e),
-            msg_id,
-          });
-        })
-        .finally(() => {
-          this.onStreamEvent({
-            type: "finish",
-            data: "",
-            msg_id,
-          });
+    const maxRetries = keyManager.getAllKeys().length || 1;
+    let lastError: Error | null = null;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const stream = await this.geminiClient.sendMessageStream(
+          query,
+          abortController.signal
+        );
+        this.onStreamEvent({
+          type: "start",
+          data: "",
+          msg_id,
         });
-      return "";
-    } catch (e) {
-      this.onStreamEvent({
-        type: "error",
-        data: e.message,
-        msg_id,
-      });
+        this.handleMessage(stream, msg_id, abortController)
+          .catch((e: any) => {
+            this.onStreamEvent({
+              type: "error",
+              data: e?.message || JSON.stringify(e),
+              msg_id,
+            });
+          })
+          .finally(() => {
+            this.onStreamEvent({
+              type: "finish",
+              data: "",
+              msg_id,
+            });
+          });
+        return ""; // Success, exit loop
+      } catch (e) {
+        lastError = e;
+        const isRateLimitError =
+          e.message.includes("429") ||
+          e.message.toLowerCase().includes("quota") ||
+          e.message.toLowerCase().includes("rate limit");
+
+        if (i < maxRetries - 1) {
+          if (isRateLimitError) {
+            keyManager.markCurrentAsRateLimited();
+          } else {
+            keyManager.markCurrentAsInvalid();
+          }
+          const nextKey = keyManager.switchToNextAvailableKey();
+          if (nextKey) {
+            this.onStreamEvent({
+              type: "info",
+              data: isRateLimitError
+                ? `API key rate-limited. Switching to the next available key.`
+                : `API key is invalid. Switching to the next available key.`,
+              msg_id,
+            });
+            process.env.GEMINI_API_KEY = nextKey.key;
+            await this.config.refreshAuth(this.authType || AuthType.USE_GEMINI);
+            this.geminiClient = this.config.getGeminiClient();
+            continue; // continue to next iteration to retry
+          } else {
+            // all keys are exhausted
+            break; // exit loop
+          }
+        } else {
+          // No more keys to try
+          break; // exit loop
+        }
+      }
     }
+
+    // If we are here, it means all retries failed.
+    this.onStreamEvent({
+      type: "error",
+      data: lastError?.message || "All API keys are exhausted.",
+      msg_id,
+    });
   }
 
   async send(message: string | Array<{ text: string }>, msg_id = "") {
@@ -322,5 +364,9 @@ export class GeminiAgent {
   }
   async stop() {
     this.abortController?.abort();
+  }
+
+  getKeyStatuses() {
+    return keyManager.getAllKeys() || [];
   }
 }

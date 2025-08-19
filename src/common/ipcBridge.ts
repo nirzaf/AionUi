@@ -114,6 +114,12 @@ export const geminiConversation = {
   ),
 };
 
+export const geminiApis = {
+  getKeyStatuses: bridge.buildProvider<IApiKeyStatus[], void>(
+    "gemini.get-key-statuses"
+  ),
+};
+
 // 重置对话
 export const resetConversation = bridge.buildProvider<
   void,
@@ -136,4 +142,10 @@ export interface IResponseMessage {
   data: any;
   msg_id: string;
   conversation_id: string;
+}
+
+export interface IApiKeyStatus {
+  key: string;
+  status: "valid" | "rate-limited" | "invalid";
+  resetTime?: number;
 }
