@@ -24,6 +24,10 @@ export interface IConfigStorageRefer {
     authType: string;
     proxy: string;
     GOOGLE_GEMINI_BASE_URL?: string;
+    GEMINI_API_KEY?: string; // to be deprecated
+    GEMINI_API_KEYS?: string[];
+    GOOGLE_API_KEY?: string;
+    activeKeyIndex?: number;
   };
   language: string;
 }

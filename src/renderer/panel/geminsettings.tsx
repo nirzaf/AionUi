@@ -4,12 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Alert, Button, Form, Input, Select } from "@arco-design/web-react";
+import {
+  Alert,
+  Button,
+  Form,
+  Input,
+  Select,
+  Space,
+  Badge,
+} from "@arco-design/web-react";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ipcBridge } from "../../common";
+import { ipcBridge, geminiApis } from "../../common";
 import { FolderOpen, Link } from "@icon-park/react";
-import { systemInfo } from "../../common/ipcBridge";
+import { systemInfo, IApiKeyStatus } from "../../common/ipcBridge";
 import { ConfigStorage } from "@/common/storage";
 
 const GeminiSettings: React.FC<{
@@ -20,8 +28,20 @@ const GeminiSettings: React.FC<{
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [oldConfig, setOldConfig] = useState({ authType: "", proxy: "" });
+  const [keyStatuses, setKeyStatuses] = useState<IApiKeyStatus[]>([]);
+
+  const activeKeyIndex = Form.useWatch("activeKeyIndex", form);
+
+  const fetchKeyStatuses = () => {
+    geminiApis.getKeyStatuses.invoke().then(setKeyStatuses);
+  };
+
   const onSubmit = (values: any) => {
     delete values.tempDir;
+    // remove old key
+    if (values.GEMINI_API_KEY) {
+      delete values.GEMINI_API_KEY;
+    }
     setLoading(true);
     setError(null);
     ConfigStorage.set("gemini.config", values)
@@ -44,9 +64,19 @@ const GeminiSettings: React.FC<{
       });
   };
   useEffect(() => {
+    fetchKeyStatuses();
     ConfigStorage.get("gemini.config").then((data) => {
-      form.setFieldsValue(data);
-      if (data) setOldConfig(data);
+      if (data) {
+        if (
+          data.GEMINI_API_KEY &&
+          (!data.GEMINI_API_KEYS || data.GEMINI_API_KEYS.length === 0)
+        ) {
+          data.GEMINI_API_KEYS = [data.GEMINI_API_KEY];
+          data.activeKeyIndex = 0;
+        }
+        form.setFieldsValue(data);
+        setOldConfig(data);
+      }
     });
     systemInfo.invoke().then((data) => {
       form.setFieldValue("tempDir", data.tempDir);
@@ -103,19 +133,119 @@ const GeminiSettings: React.FC<{
         ></Select>
       </Form.Item>
       {authType === "gemini-api-key" ? (
-        <Form.Item label={t("settings.geminiApiKey")} field="GEMINI_API_KEY">
-          <Input></Input>
-        </Form.Item>
+        <>
+          <Form.List field="GEMINI_API_KEYS">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field, index) => {
+                  const status = keyStatuses[index]?.status;
+                  const resetTime = keyStatuses[index]?.resetTime;
+                  let statusNode;
+                  switch (status) {
+                    case "rate-limited":
+                      statusNode = (
+                        <Badge
+                          status="warning"
+                          text={`${t(
+                            "settings.rateLimited"
+                          )} ${new Date(resetTime).toLocaleTimeString()}`}
+                        />
+                      );
+                      break;
+                    case "invalid":
+                      statusNode = (
+                        <Badge
+                          status="error"
+                          text={t("settings.invalid")}
+                        />
+                      );
+                      break;
+                    case "valid":
+                      if (index === activeKeyIndex) {
+                        statusNode = (
+                          <Badge
+                            status="success"
+                            text={t("settings.active")}
+                          />
+                        );
+                      }
+                      break;
+                  }
+
+                  return (
+                    <Form.Item
+                      key={field.key}
+                      label={
+                        <Space>
+                          <span>
+                            {index === 0
+                              ? t("settings.geminiApiKey")
+                              : `${t("settings.geminiApiKey")} ${index + 1}`}
+                          </span>
+                        </Space>
+                      }
+                      field={field.name}
+                    >
+                      <div className="flex flex-col">
+                        <Input
+                          suffix={
+                            <div className="flex gap-5px">
+                              <Button
+                                size="small"
+                                onClick={() => {
+                                  form.setFieldValue("activeKeyIndex", index);
+                                }}
+                                type={
+                                  activeKeyIndex === index
+                                    ? "primary"
+                                    : "default"
+                                }
+                              >
+                                {activeKeyIndex === index
+                                  ? t("settings.active")
+                                  : t("settings.setActive")}
+                              </Button>
+                              {fields.length > 1 && (
+                                <Button
+                                  size="small"
+                                  type="dashed"
+                                  onClick={() => remove(index)}
+                                >
+                                  {t("common.remove")}
+                                </Button>
+                              )}
+                            </div>
+                          }
+                        />
+                         <div className="text-right">{statusNode}</div>
+                      </div>
+                    </Form.Item>
+                  );
+                })}
+                <Form.Item wrapperCol={{ offset: 5 }}>
+                  <Button
+                    onClick={() => add("")}
+                    disabled={fields.length >= 5}
+                  >
+                    {t("settings.addApiKey")}
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+          <Form.Item
+            label={t("settings.geminiBaseUrl")}
+            field="GOOGLE_GEMINI_BASE_URL"
+          >
+            <Input placeholder="https://generativelanguage.googleapis.com"></Input>
+          </Form.Item>
+        </>
       ) : authType === "vertex-ai" ? (
         <Form.Item label={t("settings.vertexApiKey")} field="GOOGLE_API_KEY">
           <Input></Input>
         </Form.Item>
       ) : null}
-      {authType === "gemini-api-key" && (
-        <Form.Item label={t("settings.geminiBaseUrl")} field="GOOGLE_GEMINI_BASE_URL">
-          <Input placeholder="https://generativelanguage.googleapis.com"></Input>
-        </Form.Item>
-      )}
+
       <Form.Item label={t("settings.proxyConfig")} field="proxy">
         <Input></Input>
       </Form.Item>

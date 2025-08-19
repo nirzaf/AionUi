@@ -48,7 +48,12 @@
     "geminiBaseUrl": "Gemini API Base URL",
     "tempDir": "Temporary Directory",
     "language": "Language",
-    "geminiSettings": "gemini settings"
+    "geminiSettings": "gemini settings",
+    "addApiKey": "Add API Key",
+    "setActive": "Set Active",
+    "active": "Active",
+    "rateLimited": "Rate-Limited, reset at",
+    "invalid": "Invalid"
   },
   "messages": {
     "conversationInProgress": "A conversation is currently in progress...",
