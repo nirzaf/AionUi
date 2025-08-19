@@ -12,7 +12,6 @@ import { keyManager } from "@/agent/gemini/keyManager";
 setTimeout(initStorage);
 
 app.whenReady().then(() => {
-  initStorage().then(() => {
-    keyManager.init();
-  });
+  initStorage();
+  keyManager.init();
 });

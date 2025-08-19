@@ -62,6 +62,10 @@ export const mode = {
   getModelConfig: bridge.buildProvider<IModel[], void>('mode.get-model-config'),
 };
 
+export const geminiApis = {
+  getKeyStatuses: bridge.buildProvider<any[], void>('gemini.apis.get-key-statuses'),
+};
+
 interface ISendMessageParams {
   input: string;
   msg_id: string;
