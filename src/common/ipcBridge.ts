@@ -64,6 +64,10 @@ export const mode = {
 
 export const geminiApis = {
   getKeyStatuses: bridge.buildProvider<any[], void>('gemini.apis.get-key-statuses'),
+  updateKeys: bridge.buildProvider<IBridgeResponse, { keys: string[] }>('gemini.apis.update-keys'),
+  switchActiveKey: bridge.buildProvider<IBridgeResponse, { keyIndex: number }>('gemini.apis.switch-active-key'),
+  addKey: bridge.buildProvider<IBridgeResponse, { key: string }>('gemini.apis.add-key'),
+  removeKey: bridge.buildProvider<IBridgeResponse, { keyIndex: number }>('gemini.apis.remove-key'),
 };
 
 interface ISendMessageParams {

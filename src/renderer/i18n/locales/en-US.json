@@ -79,7 +79,26 @@
     "pleaseEnterBaseUrlAndApiKey": "Please enter base url and api key",
     "customOpenAI": "Custom (OpenAI Compatible)",
     "proxyHttpOnly": "Only support http/https protocol",
-    "baseUrlAutoFix": "base_url auto fix to: {{base_url}}"
+    "baseUrlAutoFix": "base_url auto fix to: {{base_url}}",
+    "apiKeys": {
+      "title": "API Key Management",
+      "management": "Multiple API Keys",
+      "placeholder": "Enter Gemini API Key",
+      "addKey": "Add API Key",
+      "setActive": "Set Active",
+      "refreshStatus": "Refresh Status",
+      "resetIn": "Reset in",
+      "maxKeys": "{{current}}/{{max}} keys"
+    },
+    "keyStatus": {
+      "valid": "Valid",
+      "rateLimited": "Rate Limited",
+      "invalid": "Invalid",
+      "unknown": "Unknown"
+    },
+    "error": {
+      "noApiKeys": "At least one API key is required"
+    }
   },
   "messages": {
     "conversationInProgress": "A conversation is currently in progress...",

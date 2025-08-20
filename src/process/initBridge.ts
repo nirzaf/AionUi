@@ -252,5 +252,58 @@ ipcBridge.mode.getModelConfig.provider(async () => {
 import { keyManager } from "@/agent/gemini/keyManager";
 
 ipcBridge.geminiApis.getKeyStatuses.provider(async () => {
-  return keyManager.getAllKeys();
+  await keyManager.init();
+  return keyManager.getKeyStatuses();
+});
+
+ipcBridge.geminiApis.updateKeys.provider(async ({ keys }) => {
+  try {
+    await keyManager.init();
+    await keyManager.updateKeys(keys);
+    return { success: true };
+  } catch (error) {
+    return { success: false, msg: error.message || error.toString() };
+  }
+});
+
+ipcBridge.geminiApis.switchActiveKey.provider(async ({ keyIndex }) => {
+  try {
+    await keyManager.init();
+    const success = await keyManager.switchToKey(keyIndex);
+    if (success) {
+      return { success: true };
+    } else {
+      return { success: false, msg: 'Failed to switch to the specified key' };
+    }
+  } catch (error) {
+    return { success: false, msg: error.message || error.toString() };
+  }
+});
+
+ipcBridge.geminiApis.addKey.provider(async ({ key }) => {
+  try {
+    await keyManager.init();
+    const success = await keyManager.addKey(key);
+    if (success) {
+      return { success: true };
+    } else {
+      return { success: false, msg: 'Failed to add key (maximum 5 keys or key already exists)' };
+    }
+  } catch (error) {
+    return { success: false, msg: error.message || error.toString() };
+  }
+});
+
+ipcBridge.geminiApis.removeKey.provider(async ({ keyIndex }) => {
+  try {
+    await keyManager.init();
+    const success = await keyManager.removeKey(keyIndex);
+    if (success) {
+      return { success: true };
+    } else {
+      return { success: false, msg: 'Failed to remove key (cannot remove the only key or invalid index)' };
+    }
+  } catch (error) {
+    return { success: false, msg: error.message || error.toString() };
+  }
 });

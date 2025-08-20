@@ -17,6 +17,7 @@ import { loadExtensions } from './cli/extension';
 import type { Settings } from './cli/settings';
 import { loadSettings } from './cli/settings';
 import { mapToDisplay } from './cli/useReactToolScheduler';
+import { keyManager } from './keyManager';
 import { getPromptCount, handleCompletedTools, processGeminiStreamEvents, startNewPrompt } from './utils';
 
 function mergeMcpServers(settings: ReturnType<typeof loadSettings>['merged'], extensions: Extension[]) {
@@ -66,11 +67,10 @@ export class GeminiAgent {
       this.authType = AuthType.USE_OPENAI;
     }
     this.onStreamEvent = options.onStreamEvent;
-    this.initClientEnv();
     this.bootstrap = this.initialize();
   }
 
-  private initClientEnv() {
+  private async initClientEnv() {
     const env = this.getEnv();
     const fallbackValue = (key: string, value1: string, value2?: string) => {
       if (value1 && value1 !== 'undefined') {
@@ -82,7 +82,17 @@ export class GeminiAgent {
     };
 
     if (this.authType === AuthType.USE_GEMINI) {
-      fallbackValue('GEMINI_API_KEY', this.model.apiKey);
+      // Initialize keyManager and get active key
+      await keyManager.init();
+      const activeKey = keyManager.getActiveKey();
+
+      if (activeKey) {
+        fallbackValue('GEMINI_API_KEY', activeKey.key);
+      } else {
+        // Fallback to model's API key if no active key available
+        fallbackValue('GEMINI_API_KEY', this.model.apiKey);
+      }
+
       fallbackValue('GOOGLE_GEMINI_BASE_URL', this.model.baseUrl);
       return;
     }
@@ -126,6 +136,7 @@ export class GeminiAgent {
   }
 
   private async initialize(): Promise<void> {
+    await this.initClientEnv();
     const path = this.workspace;
 
     const settings = loadSettings(path).merged;
@@ -275,7 +286,7 @@ export class GeminiAgent {
         msg_id,
       });
       this.handleMessage(stream, msg_id, abortController)
-        .catch((e: any) => {
+        .catch(async (e: any) => {
           this.onStreamEvent({
             type: 'error',
             data: e?.message || JSON.stringify(e),
@@ -322,6 +333,4 @@ export class GeminiAgent {
   async stop() {
     this.abortController?.abort();
   }
-
-
 }

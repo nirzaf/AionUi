@@ -79,7 +79,26 @@
     "pleaseEnterBaseUrlAndApiKey": "请输入base url和api key",
     "customOpenAI": "自定义(兼容OpenAI)",
     "proxyHttpOnly": "仅支持 http/https 协议",
-    "baseUrlAutoFix": "base_url 自动修复为：{{base_url}}"
+    "baseUrlAutoFix": "base_url 自动修复为：{{base_url}}",
+    "apiKeys": {
+      "title": "API 密钥管理",
+      "management": "多个 API 密钥",
+      "placeholder": "输入 Gemini API 密钥",
+      "addKey": "添加 API 密钥",
+      "setActive": "设为活跃",
+      "refreshStatus": "刷新状态",
+      "resetIn": "重置时间",
+      "maxKeys": "{{current}}/{{max}} 个密钥"
+    },
+    "keyStatus": {
+      "valid": "有效",
+      "rateLimited": "限流中",
+      "invalid": "无效",
+      "unknown": "未知"
+    },
+    "error": {
+      "noApiKeys": "至少需要一个 API 密钥"
+    }
   },
   "messages": {
     "conversationInProgress": "当前正在进行对话中...",

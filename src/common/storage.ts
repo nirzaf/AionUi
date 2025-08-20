@@ -26,6 +26,17 @@ export interface IConfigStorageRefer {
     GEMINI_API_KEYS?: string[];
     GOOGLE_API_KEY?: string;
     activeKeyIndex?: number;
+    keyManagerState?: {
+      keys: Array<{
+        key: string;
+        status: "valid" | "rate-limited" | "invalid";
+        resetTime?: number;
+        lastUsed?: number;
+        errorCount?: number;
+      }>;
+      activeKeyIndex: number;
+      lastRotationTime?: number;
+    };
   };
   'model.config': IModel[];
   language: string;
